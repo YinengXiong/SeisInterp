@@ -3,7 +3,7 @@ import random
 import numpy as np
 import cv2
 
-from utils import *
+from data_transforms import *
 
 import torch
 from torch.utils.data.dataset import Dataset
@@ -41,10 +41,8 @@ class PreInterpDataset(Dataset):
     def __getitem__(self, index):
         """
         Return a data point and its metadata information.
-
         Parameters:
             index -- a random integer for data indexing
-
         Returns two tensors (input, target)
             input (tensor) -- input pre-interpolated seismic data patch
             target (tensor) -- target (ground-truth) seismic data patch
@@ -100,7 +98,7 @@ class PreInterpDataset(Dataset):
         return self.data_len
 
 if __name__ == '__main__':
-    preinterpdata = PreInterpDataset('./Data/zeromean_new/Train/', 150)
+    preinterpdata = PreInterpDataset('../Data/zeromean_new/Train/', 150)
     lr, gt = preinterpdata.__getitem__(0)
     print(lr.size())
     print(gt.size())

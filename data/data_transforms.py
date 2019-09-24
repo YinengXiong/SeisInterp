@@ -3,7 +3,6 @@ from scipy.ndimage.interpolation import map_coordinates
 from scipy.ndimage.filters import gaussian_filter
 from random import randint
 
-
 def add_elastic_transform(image, alpha, sigma, pad_size=30, seed=None):
     """
     Args:
