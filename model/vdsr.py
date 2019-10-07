@@ -1,9 +1,9 @@
 import basic
 import torch.nn as nn
 
-class VDSR(nn.Module):
+class Model(nn.Module):
     def __init__(self, args):
-        super(VDSR, self).__init__()
+        super(Model, self).__init__()
         self.num_blocks = args.num_blocks
         self.num_features = args.num_features
         self.residual = args.residual
