@@ -26,11 +26,11 @@ def accuracy(output, target):
     calculate SNR
     """
     SNRsum = 0.
-    for i in range(target.size(0)):
+    #print(target.size(0))
+    for ii in range(target.size(0)):
         pred = output[ii, :, :, :].squeeze().cpu().data.numpy()
-        lebel = output[ii, :, :, :].squeeze().cpu().data.numpy()
+        label = target[ii, :, :, :].squeeze().cpu().data.numpy()
         SNRsum += SNR(pred, label)
-
     return SNRsum / target.size(0) * 1.
 
 def adjust_learning_rate(args, optimizer, epoch):
