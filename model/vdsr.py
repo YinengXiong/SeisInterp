@@ -1,4 +1,4 @@
-import basic
+from model import basic
 import torch.nn as nn
 
 class Model(nn.Module):
@@ -14,7 +14,7 @@ class Model(nn.Module):
         body = []
         body.append(basic.BasicBlock(1, self.num_features, kernel_size,
                                      bias=self.use_bias, norm=self.norm))
-        for _ in range(self.num_blocks-2):
+        for _ in range(self.num_blocks):
             body.append(basic.BasicBlock(self.num_features, self.num_features, kernel_size,
                                          bias=self.use_bias, norm=self.norm))
 
