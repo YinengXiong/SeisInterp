@@ -3,11 +3,21 @@ import os
 import torch
 
 class BaseOptions():
+    """
+    This class defines options used during training and test time.
+    It also implements some helper function such as printing, saving and parsing the options.
+    """
     def __init__(self):
+        """
+        Reset the class; inticates the class hasn't been initialized
+        """
         self.parser = argparse.ArgumentParser()
         self.initialized = False
 
     def initialize(self):
+        """
+        Define the common options that are used in both training and test.
+        """
         # experiment specifics
         self.parser.add_argument('--gpu', type=str, default='0', metavar='N', help='GPU ids')
         self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoint', help='Path to save the checkpoint file')
@@ -30,8 +40,24 @@ class BaseOptions():
         self.parser.add_argument('--use_bias', action='store_true', help='Using bias in Conv layers')
         self.parser.add_argument('--norm', type=str, default='None', help='Normalize type')
 
+    def print_options(self, args):
+        '''
+        Pirint the options
+        It will print both current options and default options
+        '''
+        message = ''
+        message += ('\n' + '-'*30 + 'Options' + '-' * 30 + '\n')
+        for k, v in sorted(vars(self.args).items()):
+            default = self.parser.get_default(k)
+            comment = '\t[default: %s]' %str(default)
+            message += '{:>20}: {:<20}{}\n'.format(str(k), str(v), comment)
+        message += ('-'*30 + 'End' + '-' * 30 + '\n')
+        print(message)
 
     def parse(self):
+        '''
+        Parse the options
+        '''
         if not self.initialized:
             self.initialize()
         self.args = self.parser.parse_args()
@@ -40,11 +66,14 @@ class BaseOptions():
         if self.args.norm.lower() == 'none':
             self.args.norm = None
 
+        self.print_options(self.args)
+        '''
         args = vars(self.args)
         print('------------ Options -------------')
         for k, v in sorted(args.items()):
             print('%s: %s' % (str(k), str(v)))
         print('-------------- End ---------------')
+        '''
 
         return self.args
 

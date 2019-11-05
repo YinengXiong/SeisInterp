@@ -54,7 +54,7 @@ class PreInterpDataset(Dataset):
         data_name = self.data_arr[index]
         data = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
         data.shape = (self.num_traces, -1)
-        data = data.T
+        data = data.T # only needed in WYY data!
 
         # Subsample & pre-interpolate
         if self.direction == 0:
@@ -95,4 +95,7 @@ class PreInterpDataset(Dataset):
         return input_crop, data_crop
 
     def __len__(self):
+        """
+        Return the total number of data in the dataset.
+        """
         return self.data_len
