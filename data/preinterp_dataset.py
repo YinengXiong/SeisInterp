@@ -3,10 +3,25 @@ import random
 import numpy as np
 import cv2
 
-from data.data_transforms import *
+#from data.data_transforms import *
 
 import torch
 from torch.utils.data.dataset import Dataset
+
+def random_flip_and_rotate(im1, im2):
+    if random.random() < 0.5:
+        im1 = np.flipud(im1)
+        im2 = np.flipud(im2)
+
+    if random.random() < 0.5:
+        im1 = np.fliplr(im1)
+        im2 = np.fliplr(im2)
+
+    angle = random.choice([0, 1, 2, ])
+    im1 = np.rot90(im1, angle)
+    im2 = np.rot90(im2, angle)
+
+    return im1.copy(), im2.copy()
 
 class PreInterpDataset(Dataset):
     """
@@ -71,6 +86,7 @@ class PreInterpDataset(Dataset):
         # Random Crop
         h, w = data.shape[0], data.shape[1]
         while True:
+        #if True:
             crop_x = random.randint(0, max(0, h - self.patchSize - 1))
             crop_y = random.randint(0, max(0, w - self.patchSize - 1))
             data_crop = data[crop_x: crop_x + self.patchSize,
@@ -82,9 +98,10 @@ class PreInterpDataset(Dataset):
                 break
 
         # Data Augmentation
-        flip_num = randint(0, 3)
-        data_crop = flip(data_crop, flip_num)
-        input_crop = flip(input_crop, flip_num)
+        #flip_num = randint(0, 3)
+        #data_crop = flip(data_crop, flip_num)
+        #input_crop = flip(input_crop, flip_num)
+        data_crop, input_crop = random_flip_and_rotate(data_crop, input_crop)
 
         data_crop = np.expand_dims(data_crop, axis=0)
         input_crop = np.expand_dims(input_crop, axis=0)
