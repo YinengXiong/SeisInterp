@@ -4,6 +4,7 @@ import shutil
 import logging
 import importlib
 
+import numpy as np
 import cv2
 
 import torch
@@ -29,7 +30,6 @@ def train_model(train_data_loader, mnodel, criterion, optimizer, epoch,
 
     for i, (input, target) in enumerate(train_data_loader):
         data_time.update(time.time() - start)
-        time_input = time.time()
 
         input = Variable(input.cuda())
         target = Variable(target.cuda())
@@ -254,7 +254,7 @@ for epoch in range(start_epoch, args.nEpochs):
         save_checkpoint(args, {
             'epoch': epoch + 1,
             'arch': args.arch,
-            'state_dict': model.state_dict(),
+            'state_dict': model.module.state_dict() if torch.cuda.device_count() > 1 else model.state_dict(),
             'best_prec': best_prec
         }, is_best, filename=ckpt_path)
 

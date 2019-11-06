@@ -1,6 +1,4 @@
 import argparse
-import os
-import torch
 
 class BaseOptions():
     """
@@ -27,8 +25,6 @@ class BaseOptions():
         self.parser.add_argument('--num_traces', type=int, default=150, help='Number of traces in each seismic data')
         self.parser.add_argument('--scale', type=int, default=4, help='Interpolation scale factor')
         self.parser.add_argument('--direction', type=int, default=0, help='Axis to interpolate. [0 (space) | 1 (time) | 2 (both)]')
-        self.parser.add_argument('--patchSize', type=int, default=64, help='Size of croped seismic data')
-        self.parser.add_argument('--repeat', type=int, default=50, help='Repeat time')
         self.parser.add_argument('--batchSize', type=int, default=1, help='Batch Size')
         self.parser.add_argument('--nThreads', type=int, default=4, help='Num of threads for loading data')
 
@@ -51,7 +47,7 @@ class BaseOptions():
             default = self.parser.get_default(k)
             comment = '\t[default: %s]' %str(default)
             message += '{:>20}: {:<20}{}\n'.format(str(k), str(v), comment)
-        message += ('-'*30 + 'End' + '-' * 30 + '\n')
+        message += ('-'*30 + '  End  ' + '-' * 30 + '\n')
         print(message)
 
     def parse(self):
@@ -63,7 +59,7 @@ class BaseOptions():
         self.args = self.parser.parse_args()
         self.args.isTrain = self.isTrain
 
-        if self.args.norm.lower() == 'none':
+        if self.args.norm.upper() not in ['BN', 'IN']:
             self.args.norm = None
 
         self.print_options(self.args)

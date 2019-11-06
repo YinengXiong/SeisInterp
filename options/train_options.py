@@ -9,6 +9,9 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--val_freq', type=int, default=1, help='Frequency of evaluating on validation set')
 
         # for training
+        self.parser.add_argument('--patchSize', type=int, default=64, help='Size of croped seismic data')
+        self.parser.add_argument('--repeat', type=int, default=50, help='Repeat time')
+
         self.parser.add_argument('--resume', type=str, default='', help='Continue training: load the latest model')
         self.parser.add_argument('--pretrained', type=str, default='', help='Load the pretrained model from the specified location')
         self.parser.add_argument('--nEpochs', type=int, default=100, help='Num of epochs')
