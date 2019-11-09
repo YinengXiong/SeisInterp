@@ -91,7 +91,6 @@ if args.sample_dir:
 # Create Model
 print('Creating Model...')
 model = importlib.import_module("model.{}".format(args.arch)).Model(args)
-#print(model)
 
 
 # Load pretrained model
@@ -167,10 +166,19 @@ for i, ff in enumerate(testlists):
         output, count = test_model(test_loader, model, args.testSize, output_size)
         sr = output / count
 
+    testTime += (time.time() - start)
+
     result = SNR(sr, data)
     testSNR += result
-    testTime += (time.time() - start)
+
+    if args.sample_dir:
+        filename = args.arch + '_' + ff.replace('.dat', '.npy')
+        np.save(os.path.join(args.sample_dir, filename), sr)
+
     print('{:40} SNR = {:.4f}'.format(datafile, result))
 
 print('*' * 50)
-print(testSNR / testCount)
+print('Average SNR {:.4f} dB'.format(testSNR / testCount))
+print('Average Inference time {:.4f} s'.format(testTime / testCount))
+if args.sample_dir:
+    print('Results saved to ', args.sample_dir)

@@ -28,28 +28,38 @@ def train_model(train_data_loader, mnodel, criterion, optimizer, epoch,
     hist = 0.
     count = 0.
 
-    for i, (input, target) in enumerate(train_data_loader):
+    for i, (hr, lr) in enumerate(train_data_loader):
         data_time.update(time.time() - start)
 
-        input = Variable(input.cuda())
-        target = Variable(target.cuda())
+        '''
+        if args.scale > 0:
+            hr, lr = inputs[-1][0], inputs[-1][1]
+            print(hr.size(), lr.size())
+        else:
+            scale = random.randint(2, 4)
+            hr, lr = inputs[scale-2][0], inputs[scale-2][1]
+        '''
 
-        output = model(input)
-        loss = criterion(output, target)
+        hr = Variable(hr.cuda())
+        lr = Variable(lr.cuda())
 
-        losses.update(loss.data.item(), input.size(0))
+        output = model(lr)
+        loss = criterion(output, hr)
 
-        for index in range(target.size(0)):
+        losses.update(loss.data.item(), hr.size(0))
+
+        for index in range(hr.size(0)):
             pred = output[index, :, :, :].cpu().data.numpy()
-            label = target[index, :, :, :].cpu().data.numpy()
+            label = hr[index, :, :, :].cpu().data.numpy()
             hist += SNR(pred, label)
             count += 1
 
         if eval_score is not None:
-            scores.update(eval_score(output, target), input.size(0))
+            scores.update(eval_score(output, hr), hr.size(0))
 
         optimizer.zero_grad()
         loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), args.clip)
         optimizer.step()
 
         batch_time.update(time.time() - start)
@@ -81,42 +91,43 @@ def validate(model, criterion, eval_score=None, args=None):
 
     for i, ff in enumerate(vallists):
         datafile = os.path.join(val_dir, ff)
-        data = np.fromfile(datafile, 'float32')
+        hr = np.fromfile(datafile, 'float32')
 
-        data.shape = (args.num_traces, -1)
-        data = data.T
+        hr.shape = (args.num_traces, -1)
+        hr = hr.T
 
+        if args.scale == 0:
+            ss = 4
+        else:
+            ss = args.scale
         # Subsample & pre-interpolate
         if args.direction == 0:
-            subsampled = cv2.resize(data, (data.shape[1] // args.scale, data.shape[0]),
-                                    cv2.INTER_CUBIC)
+            lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0]), cv2.INTER_CUBIC)
         elif args.direction == 1:
-            subsampled = cv2.resize(data, (data.shape[1], data.shape[0] // args.scale),
-                                    cv2.INTER_CUBIC)
+            lr = cv2.resize(hr, (hr.shape[1], hr.shape[0] // ss), cv2.INTER_CUBIC)
         else:
-            subsampled = cv2.resize(data, (data.shape[1] // args.scale, data.shape[0] // args.scale),
-                                    cv2.INTER_CUBIC)
-        subsampled = cv2.resize(subsampled, (data.shape[1], data.shape[0]), cv2.INTER_CUBIC)
+            lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0] // ss), cv2.INTER_CUBIC)
+        lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), cv2.INTER_CUBIC)
 
         # Validate on whole image
-        input_tensor = np.expand_dims(subsampled, axis=0)
-        input_tensor = np.expand_dims(input_tensor, axis=0)
-        input_tensor = torch.from_numpy(input_tensor.copy()).float().cuda()
+        lr = np.expand_dims(lr, axis=0)
+        lr = np.expand_dims(lr, axis=0)
+        lr = torch.from_numpy(lr.copy()).float().cuda()
 
         # Forward
         with torch.no_grad():
-            output = model(input_tensor)
-        sr = output.squeeze(0).detach().cpu().numpy()
+            sr = model(lr)
+        sr = sr.squeeze(0).detach().cpu().numpy()
 
         # Evaluate performance
         if eval_score is not None:
-            score.update(eval_score(sr, data), 1)
+            score.update(eval_score(sr, hr), 1)
 
         # Update time
         batch_time.update(time.time() - start)
         start = time.time()
 
-        valSNR += SNR(sr, data)
+        valSNR += SNR(sr, hr)
 
         if i % args.print_freq == 0:
             logger.info('Test: [{0}/{1}]\t'
@@ -126,8 +137,8 @@ def validate(model, criterion, eval_score=None, args=None):
                         ))
 
     finalscore = valSNR / valCount
-    print('*' * 50)
     logger.info(finalscore)
+    print('*' * 50)
     return score.avg
 
 def save_checkpoint(args, state, is_best, filename='checkpoint.pth.tar'):

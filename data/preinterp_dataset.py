@@ -5,8 +5,22 @@ import cv2
 
 #from data.data_transforms import *
 
-import torch
 from torch.utils.data.dataset import Dataset
+
+def random_crop(hr, lr, size):
+    h, w = hr.shape[0], hr.shape[1]
+    while True:
+        crop_x = random.randint(0, h - size)
+        crop_y = random.randint(0, w - size)
+
+        crop_lr = lr[crop_x: crop_x + size,
+                     crop_y: crop_y + size].copy()
+        crop_hr = hr[crop_x: crop_x + size,
+                     crop_y: crop_y + size].copy()
+
+        if (np.max(crop_hr) > 0):
+            break
+    return crop_hr, crop_lr
 
 def random_flip_and_rotate(im1, im2):
     if random.random() < 0.5:
@@ -17,7 +31,7 @@ def random_flip_and_rotate(im1, im2):
         im1 = np.fliplr(im1)
         im2 = np.fliplr(im2)
 
-    angle = random.choice([0, 1, 2, ])
+    angle = random.choice([0, 1, 2, 3])
     im1 = np.rot90(im1, angle)
     im2 = np.rot90(im2, angle)
 
@@ -51,12 +65,21 @@ class PreInterpDataset(Dataset):
 
         self.num_traces= args.num_traces
         self.scale = args.scale
+
+        '''
+        if args.scale == 0:
+            self.scale = [2, 3, 4]
+        else:
+            self.scale = [args.scale]
+        '''
+
         assert args.direction >= 0 and args.direction <= 2
         self.direction = args.direction
         self.patchSize = args.patchSize
 
     def __getitem__(self, index):
         """
+
         Return a data point and its metadata information.
         Parameters:
             index -- a random integer for data indexing
@@ -67,49 +90,37 @@ class PreInterpDataset(Dataset):
 
         # Read binary data files
         data_name = self.data_arr[index]
-        data = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
-        data.shape = (self.num_traces, -1)
-        data = data.T # only needed in WYY data!
+        hr = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
+
+        # To 2-D
+        hr.shape = (self.num_traces, -1)
+        hr = hr.T # only needed in WYY data!
 
         # Subsample & pre-interpolate
-        if self.direction == 0:
-            subsampled = cv2.resize(data, (data.shape[1] // self.scale, data.shape[0]),
-                                    cv2.INTER_CUBIC)
-        elif self.direction == 1:
-            subsampled = cv2.resize(data, (data.shape[1], data.shape[0] // self.scale),
-                                    cv2.INTER_CUBIC)
+        if self.scale == 0:
+            ss = random.randint(2, 4)
         else:
-            subsampled = cv2.resize(data, (data.shape[1] // self.scale, data.shape[0] // self.scale),
-                                    cv2.INTER_CUBIC)
-        subsampled = cv2.resize(subsampled, (data.shape[1], data.shape[0]), cv2.INTER_CUBIC)
+            ss = self.scale
 
-        # Random Crop
-        h, w = data.shape[0], data.shape[1]
-        while True:
-        #if True:
-            crop_x = random.randint(0, max(0, h - self.patchSize - 1))
-            crop_y = random.randint(0, max(0, w - self.patchSize - 1))
-            data_crop = data[crop_x: crop_x + self.patchSize,
-                             crop_y: crop_y + self.patchSize]
-            input_crop = subsampled[crop_x: crop_x + self.patchSize,
-                                    crop_y: crop_y + self.patchSize]
+        if self.direction ==0:
+            lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0]),
+                            cv2.INTER_CUBIC)
+        elif self.direction == 1:
+            lr = cv2.resize(hr, (hr.shape[1], hr.shape[0] // ss),
+                            cv2.INTER_CUBIC)
+        else:
+            lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0] // ss),
+                            cv2.INTER_CUBIC)
+        lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]),
+                        cv2.INTER_CUBIC)
 
-            if (np.max(data_crop) > 0):
-                break
+        hr, lr = random_crop(hr, lr, self.patchSize)
+        hr, lr = random_flip_and_rotate(hr, lr)
 
-        # Data Augmentation
-        #flip_num = randint(0, 3)
-        #data_crop = flip(data_crop, flip_num)
-        #input_crop = flip(input_crop, flip_num)
-        data_crop, input_crop = random_flip_and_rotate(data_crop, input_crop)
+        hr = np.expand_dims(hr, axis=0)
+        lr = np.expand_dims(lr, axis=0)
 
-        data_crop = np.expand_dims(data_crop, axis=0)
-        input_crop = np.expand_dims(input_crop, axis=0)
-
-        data_crop = torch.from_numpy(data_crop.copy()).float()
-        input_crop = torch.from_numpy(input_crop.copy()).float()
-
-        return input_crop, data_crop
+        return hr, lr
 
     def __len__(self):
         """
