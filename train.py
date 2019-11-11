@@ -138,7 +138,6 @@ def validate(model, criterion, eval_score=None, args=None):
 
     finalscore = valSNR / valCount
     logger.info(finalscore)
-    print('*' * 50)
     return score.avg
 
 def save_checkpoint(args, state, is_best, filename='checkpoint.pth.tar'):
@@ -199,12 +198,9 @@ train_data_loader = torch.utils.data.DataLoader(
 # Create Model
 print('Creating Model...')
 start_time = time.time()
-try:
-    model = importlib.import_module("model.{}".format(args.arch)).Model(args)
-    logger.info(model)
 
-except ModuleNotFoundError:
-    print("Model not found")
+model = importlib.import_module("model.{}".format(args.arch)).Model(args)
+logger.info(model)
 
 # Load pretrained model
 if args.pretrained:

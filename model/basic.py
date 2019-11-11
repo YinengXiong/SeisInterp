@@ -1,6 +1,5 @@
 import math
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -11,11 +10,14 @@ def get_norm(num_features, norm_type):
         return nn.InstanceNorm2d(num_features)
 
 class BasicBlock(nn.Sequential):
+    """
+    Basic Conv-ReLU Block
+    """
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1,
-                 groups=1, bias=True, norm=None, act=nn.ReLU(True)):
+                 bias=True, norm=None, act=nn.ReLU(inplace=True)):
 
-        m = [nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
-                       groups=groups, bias=bias)]
+        m = [nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride,
+                       padding=padding, bias=bias)]
         if norm is not None:
             m.append(get_norm(out_channels, norm))
 
@@ -24,14 +26,18 @@ class BasicBlock(nn.Sequential):
         super(BasicBlock, self).__init__(*m)
 
 class ResBlock(nn.Module):
-    def __init__(self, conv, num_features, kernel_size, stride=1, groups=1, bias=True,
+    """
+    Residual Block
+    Conv -> ReLU -> Conv
+    """
+    def __init__(self, conv, num_features, kernel_size, stride=1, bias=True,
                  norm=None, act=nn.ReLU(True), res_scale=1):
         super(ResBlock, self).__init__()
 
         m = []
         for i in range(2):
             m.append(nn.Conv2d(num_features, num_features, kernel_size,
-                               stride=stride, groups=groups, bias=bias))
+                               stride=stride, bias=bias))
             if norm is not None:
                 m.append(get_norm(num_features, norm))
 
