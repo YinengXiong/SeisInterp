@@ -23,6 +23,7 @@ class BaseOptions():
         # input setting
         self.parser.add_argument('--dataroot', type=str, default='./Data/zeromean_new/', help='Path to dataset')
         self.parser.add_argument('--num_traces', type=int, default=150, help='Number of traces in each seismic data')
+        self.parser.add_argument('--nComp', type=int, default=1, help='Number of components of seismic data')
         self.parser.add_argument('--scale', type=int, default=4, help='Interpolation scale factor [0 (multi-scale, 2 ~ 4) | 2 | 3 | 4]')
         self.parser.add_argument('--direction', type=int, default=0, help='Axis to interpolate [0 (space) | 1 (time) | 2 (both)]')
         self.parser.add_argument('--batchSize', type=int, default=32, help='Batch Size')

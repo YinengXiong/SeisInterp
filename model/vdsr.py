@@ -5,25 +5,26 @@ import torch.nn as nn
 class Model(nn.Module):
     def __init__(self, args):
         super(Model, self).__init__()
-        self.num_blocks = args.num_blocks
-        self.num_features = args.num_features
+        num_blocks = args.num_blocks
+        num_features = args.num_features
+        bias = not args.no_bias
+        norm = args.norm
+        nComp = args.nComp
         self.residual = args.residual
-        self.bias = not args.no_bias
-        self.norm = args.norm
 
         kernel_size = 3
-        self.head = nn.Conv2d(1, self.num_features, kernel_size,
-                              stride=1, padding=1, bias=self.bias)
+        self.head = nn.Conv2d(nComp, num_features, kernel_size,
+                              stride=1, padding=1, bias=bias)
         self.act = nn.ReLU(inplace=True)
 
         body = []
-        for _ in range(self.num_blocks):
-            body.append(basic.BasicBlock(self.num_features, self.num_features, kernel_size,
-                                         bias=self.bias, norm=self.norm))
+        for _ in range(num_blocks):
+            body.append(basic.BasicBlock(num_features, num_features, kernel_size,
+                                         bias=bias, norm=norm))
         self.body = nn.Sequential(*body)
 
-        self.tail = nn.Conv2d(self.num_features, 1, kernel_size,
-                              stride=1, padding=1, bias=self.bias)
+        self.tail = nn.Conv2d(num_features, nComp, kernel_size,
+                              stride=1, padding=1, bias=bias)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):

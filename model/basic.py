@@ -30,14 +30,14 @@ class ResBlock(nn.Module):
     Residual Block
     Conv -> ReLU -> Conv
     """
-    def __init__(self, conv, num_features, kernel_size, stride=1, bias=True,
-                 norm=None, act=nn.ReLU(True), res_scale=1):
+    def __init__(self, num_features, kernel_size, bias=True, norm=None,
+                 act=nn.ReLU(True), res_scale=1):
         super(ResBlock, self).__init__()
 
         m = []
         for i in range(2):
             m.append(nn.Conv2d(num_features, num_features, kernel_size,
-                               stride=stride, bias=bias))
+                               stride=1, padding=kernel_size//2, bias=bias))
             if norm is not None:
                 m.append(get_norm(num_features, norm))
 
