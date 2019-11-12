@@ -3,12 +3,10 @@ import random
 import numpy as np
 import cv2
 
-#from data.data_transforms import *
-
 from torch.utils.data.dataset import Dataset
 
 def random_crop(hr, lr, size):
-    h, w = hr.shape[0], hr.shape[1]
+    h, w = lr.shape[0], lr.shape[1]
     while True:
         crop_x = random.randint(0, h - size)
         crop_y = random.randint(0, w - size)
@@ -44,8 +42,6 @@ class PreInterpDataset(Dataset):
     It assumes that the directory '/path/to/data/train' contains the seismic data to train.
     During test time, you need to prepare another directory '/path/to/data/test/'.
     """
-
-    #def __init__(self, data_path, num_traces, scale=4, direction=1, patch_size=64, repeat=50):
     def __init__(self, args, phase='Train'):
         """
         Initialize the dataset class.
@@ -54,10 +50,10 @@ class PreInterpDataset(Dataset):
             num_traces -- number of traces
             scale -- upsample scale factor
             direction -- direction which needs interpolation, 0(space) or 1(time) or 2(both)
-            patch_size -- size of croped seismic data
+            patchSize -- size of croped seismic data (lr patch size)
             repeat -- number of repeat in one epoch
         """
-        #self.data_path = args.dataroot
+
         self.data_path = os.path.join(args.dataroot, phase)
         self.repeat = args.repeat
         self.data_arr = sorted(os.listdir(self.data_path) * self.repeat)
@@ -66,26 +62,17 @@ class PreInterpDataset(Dataset):
         self.num_traces= args.num_traces
         self.scale = args.scale
 
-        '''
-        if args.scale == 0:
-            self.scale = [2, 3, 4]
-        else:
-            self.scale = [args.scale]
-        '''
-
-        assert args.direction >= 0 and args.direction <= 2
         self.direction = args.direction
         self.patchSize = args.patchSize
 
     def __getitem__(self, index):
         """
-
         Return a data point and its metadata information.
         Parameters:
             index -- a random integer for data indexing
         Returns two tensors (input, target)
-            input (tensor) -- input pre-interpolated seismic data patch
-            target (tensor) -- target (ground-truth) seismic data patch
+            hr (tensor) -- high-resolution (ground-truth) seismic data patch
+            lr (tensor) -- low-resolution (pre-interpolated input) seismic data patch
         """
 
         # Read binary data files
@@ -96,12 +83,13 @@ class PreInterpDataset(Dataset):
         hr.shape = (self.num_traces, -1)
         hr = hr.T # only needed in WYY data!
 
-        # Subsample & pre-interpolate
+        # For Multi-scale training
         if self.scale == 0:
             ss = random.randint(2, 4)
         else:
             ss = self.scale
 
+        # Subsample & pre-interpolate
         if self.direction ==0:
             lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0]),
                             cv2.INTER_CUBIC)
@@ -114,6 +102,7 @@ class PreInterpDataset(Dataset):
         lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]),
                         cv2.INTER_CUBIC)
 
+        # Data Augmentation
         hr, lr = random_crop(hr, lr, self.patchSize)
         hr, lr = random_flip_and_rotate(hr, lr)
 
