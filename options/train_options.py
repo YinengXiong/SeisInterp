@@ -19,6 +19,7 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--lr', type=float, default=1e-4, help='Initial learning rate')
         self.parser.add_argument('--lr_mode', type=str, default='poly', help='Learning rate schedule')
         self.parser.add_argument('--clip', type=float, default=10.0, help='Gradient Clipping')
+        self.parser.add_argument('--clip_grad', action='store_true', help='Whether use Gradient clipping')
         self.parser.add_argument('--step', type=int, default=100, help='Num of step to decay learning rate')
         self.parser.add_argument('--loss', type=str, default='l2', help='Loss type [l2 | l1]')
 

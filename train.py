@@ -155,10 +155,10 @@ args = TrainOptions().parse()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
 # Generate Checkpoints Path
-checkpath = os.path.join(args.checkpoints_dir, '{0}_{1}_{2}_{3}_{4}_{5}_{6}_{7}_{8}'.format(
+checkpath = os.path.join(args.checkpoints_dir, '{0}_{1}_bs{2}_ps{3}_b{4}_f{5}_{6}_lr{7}_mode{8}_loss{9}'.format(
     time.strftime("%m-%d_%H:%M", time.localtime()), args.arch,
     args.batchSize, args.patchSize, args.num_blocks, args.num_features,
-    'res' if args.residual else 'nores', args.lr, args.lr_mode)
+    'res' if args.residual else 'nores', args.lr, args.lr_mode, args.loss)
 )
 args.checkpath = checkpath
 
@@ -200,6 +200,8 @@ print('Creating Model...')
 start_time = time.time()
 
 model = importlib.import_module("model.{}".format(args.arch)).Model(args)
+#import vdsr
+#model = vdsr.VDSR(args.num_blocks, args.residual)
 logger.info(model)
 
 # Load pretrained model

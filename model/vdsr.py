@@ -27,15 +27,16 @@ class Model(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight.data, mode='fan_out')
+                nn.init.kaiming_normal_(m.weight.data, mode='fan_in', nonlinearity='relu')
 
     def forward(self, x):
         if self.residual:
-            identity = x
+            residual = x
+
         x = self.act(self.head(x))
         x = self.body(x)
         x = self.tail(x)
 
         if self.residual:
-            x = torch.add(x, identity)
+            x = torch.add(x, residual)
         return x

@@ -23,9 +23,9 @@ class BaseOptions():
         # input setting
         self.parser.add_argument('--dataroot', type=str, default='./Data/zeromean_new/', help='Path to dataset')
         self.parser.add_argument('--num_traces', type=int, default=150, help='Number of traces in each seismic data')
-        self.parser.add_argument('--scale', type=int, default=4, help='Interpolation scale factor')
-        self.parser.add_argument('--direction', type=int, default=0, help='Axis to interpolate. [0 (space) | 1 (time) | 2 (both)]')
-        self.parser.add_argument('--batchSize', type=int, default=1, help='Batch Size')
+        self.parser.add_argument('--scale', type=int, default=4, help='Interpolation scale factor [0 (multi-scale, 2 ~ 4) | 2 | 3 | 4]')
+        self.parser.add_argument('--direction', type=int, default=0, help='Axis to interpolate [0 (space) | 1 (time) | 2 (both)]')
+        self.parser.add_argument('--batchSize', type=int, default=32, help='Batch Size')
         self.parser.add_argument('--nThreads', type=int, default=4, help='Num of threads for loading data')
 
         # for network
@@ -33,7 +33,7 @@ class BaseOptions():
         self.parser.add_argument('--num_blocks', type=int, default=16, help='Number of blocks')
         self.parser.add_argument('--num_features', type=int, default=64, help='Number of features per block')
         self.parser.add_argument('--residual', action='store_true', help='Using residual shortcut or not')
-        self.parser.add_argument('--use_bias', action='store_true', help='Using bias in Conv layers')
+        self.parser.add_argument('--no_bias', action='store_true', help='Not using bias in Conv layers')
         self.parser.add_argument('--norm', type=str, default='None', help='Normalize type')
 
     def print_options(self, args):
