@@ -84,7 +84,7 @@ def validate(model, criterion, eval_score=None, args=None):
     model.eval()
     start = time.time()
 
-    val_dir = os.path.join(args.dataroot, 'Test')
+    val_dir = os.path.join(args.dataroot, 'Val')
     vallists = sorted(os.listdir(val_dir))
     valSNR = 0.
     valCount = len(vallists)
@@ -185,10 +185,9 @@ if args.arch == 'vdsr':
     from data.preinterp_dataset import PreInterpDataset
     dataset = PreInterpDataset(args, phase='Train')
 else:
-    ###
-    # under construction
-    pass
-    ###
+    # directly upsample
+    from data.dataset import InterpDataset
+    dataset = InterpDataset(args, phase='Train')
 
 train_data_loader = torch.utils.data.DataLoader(
     dataset=dataset, num_workers=args.nThreads, batch_size=args.batchSize, shuffle=True,

@@ -20,7 +20,7 @@ def random_crop(hr, lr, size):
             break
     return crop_hr, crop_lr
 
-def random_flip_and_rotate(im1, im2):
+def random_flip_and_rotate(im1, im2, direction):
     if random.random() < 0.5:
         im1 = np.flipud(im1)
         im2 = np.flipud(im2)
@@ -29,7 +29,10 @@ def random_flip_and_rotate(im1, im2):
         im1 = np.fliplr(im1)
         im2 = np.fliplr(im2)
 
-    angle = random.choice([0, 1, 2, 3])
+    if direction == 2:
+        angle = random.choice([0, 1, 2, 3])
+    else:
+        angle = random.choice([0, 2])
     im1 = np.rot90(im1, angle)
     im2 = np.rot90(im2, angle)
 
@@ -104,7 +107,7 @@ class PreInterpDataset(Dataset):
 
         # Data Augmentation
         hr, lr = random_crop(hr, lr, self.patchSize)
-        hr, lr = random_flip_and_rotate(hr, lr)
+        hr, lr = random_flip_and_rotate(hr, lr, self.direction)
 
         hr = np.expand_dims(hr, axis=0)
         lr = np.expand_dims(lr, axis=0)
