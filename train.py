@@ -100,14 +100,24 @@ def validate(model, criterion, eval_score=None, args=None):
             ss = 4
         else:
             ss = args.scale
-        # Subsample & pre-interpolate
+
+        # Subsample
         if args.direction == 0:
+            if args.arch != 'vdsr':
+                hr = hr[:, :hr.shape[1]//ss*ss]
             lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0]), cv2.INTER_CUBIC)
         elif args.direction == 1:
+            if args.arch != 'vdsr':
+                hr = hr[:hr.shape[0]//ss*ss, :]
             lr = cv2.resize(hr, (hr.shape[1], hr.shape[0] // ss), cv2.INTER_CUBIC)
         else:
+            if args.arch != 'vdsr':
+                hr = hr[:hr.shape[0]//ss*ss, :hr.shape[1]//ss*ss]
             lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0] // ss), cv2.INTER_CUBIC)
-        lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), cv2.INTER_CUBIC)
+
+        # only vdsr needs pre-interpolation
+        if args.arch == 'vdsr':
+            lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), cv2.INTER_CUBIC)
 
         # Validate on whole image
         lr = np.expand_dims(lr, axis=0)
