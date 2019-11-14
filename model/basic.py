@@ -1,7 +1,7 @@
 import math
 
+import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 def get_norm(num_features, norm_type):
     if norm_type == 'BN':
@@ -13,17 +13,35 @@ class BasicBlock(nn.Sequential):
     """
     Basic Conv-ReLU Block
     """
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1,
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  bias=True, norm=None, act=nn.ReLU(inplace=True)):
 
         m = [nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride,
-                       padding=padding, bias=bias)]
+                       padding=kernel_size//2, bias=bias)]
         if norm is not None:
             m.append(get_norm(out_channels, norm))
 
         if act is not None:
             m.append(act)
         super(BasicBlock, self).__init__(*m)
+
+class RDBConv(nn.Module):
+    """
+    Conv Layer in Residual-Dense Block
+    """
+    def __init__(self, in_channels, grow_rate, kernel_size, bias=True):
+        super(RDBConv, self).__init__()
+        Cin = in_channels
+        G = grow_rate
+        self.conv = nn.Sequential(*[
+            nn.Conv2d(Cin, G, kernel_size, stride=1, padding=kernel_size//2,
+                      bias=bias),
+            nn.ReLU(True)
+        ])
+
+    def forward(self, x):
+        out = self.conv(x)
+        return torch.cat((x, out), 1)
 
 class ResBlock(nn.Module):
     """

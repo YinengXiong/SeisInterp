@@ -19,7 +19,7 @@ class Model(nn.Module):
 
         # Define head module
         self.head = nn.Conv2d(nComp, num_features, kernel_size,
-                              stride=1, padding=1, bias=bias)
+                              padding=kernel_size//2, bias=bias)
 
         # Define body module
         body = []
@@ -28,15 +28,15 @@ class Model(nn.Module):
                                        act=act, res_scale=res_scale))
 
         body.append(nn.Conv2d(num_features, num_features, kernel_size,
-                              stride=1, padding=1, bias=bias))
+                              padding=kernel_size//2, bias=bias))
         self.body = nn.Sequential(*body)
 
         # Define tail module
         tail = [
             basic.Upsample(args.scale, args.direction, num_features,
-                           act=False, bias=bias),
+                           act=None, bias=bias),
             nn.Conv2d(num_features, nComp, kernel_size,
-                      stride=1, padding=1, bias=bias)
+                      padding=kernel_size//2, bias=bias)
         ]
         self.tail = nn.Sequential(*tail)
 

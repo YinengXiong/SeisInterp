@@ -14,7 +14,7 @@ class Model(nn.Module):
 
         kernel_size = 3
         self.head = nn.Conv2d(nComp, num_features, kernel_size,
-                              stride=1, padding=1, bias=bias)
+                              padding=kernel_size//2, bias=bias)
         self.act = nn.ReLU(inplace=True)
 
         body = []
@@ -24,7 +24,7 @@ class Model(nn.Module):
         self.body = nn.Sequential(*body)
 
         self.tail = nn.Conv2d(num_features, nComp, kernel_size,
-                              stride=1, padding=1, bias=bias)
+                              padding=kernel_size//2, bias=bias)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
