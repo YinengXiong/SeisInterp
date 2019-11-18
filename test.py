@@ -126,49 +126,58 @@ testTime = 0.
 
 for i, ff in enumerate(testlists):
     datafile = os.path.join(test_dir, ff)
-    data = np.fromfile(datafile, 'float32')
+    hr = np.fromfile(datafile, 'float32')
 
-    data.shape = (args.num_traces, -1)
-    data = data.T
+    hr.shape = (-1, args.num_traces)
 
     # Subsample & pre-interpolate
-    if args.direction == 0:
-        subsampled = cv2.resize(data, (data.shape[1] // args.scale, data.shape[0]),
-                                cv2.INTER_CUBIC)
-    elif args.direction == 1:
-        subsampled = cv2.resize(data, (data.shape[1], data.shape[0] // args.scale),
-                                cv2.INTER_CUBIC)
+    if args.scale == 0:
+        ss = 4
     else:
-        subsampled = cv2.resize(data, (data.shape[1] // args.scale, data.shape[0] // args.scale),
-                                cv2.INTER_CUBIC)
-    subsampled = cv2.resize(subsampled, (data.shape[1], data.shape[0]),
-                            cv2.INTER_CUBIC)
+        ss = args.scale
+
+    if args.direction == 0:
+        if args.arch != 'vdsr':
+            hr = hr[:, :hr.shape[1]//ss*ss]
+        lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0]), cv2.INTER_CUBIC)
+    elif args.direction == 1:
+        if args.arch != 'vdsr':
+            hr = hr[:hr.shape[0]//ss*ss, :]
+        lr = cv2.resize(hr, (hr.shape[1], hr.shape[0] // ss), cv2.INTER_CUBIC)
+    else:
+        if args.arch != 'vdsr':
+            hr = hr[:hr.shape[0]//ss*ss, :hr.shape[1]//ss*ss]
+        lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0] // ss), cv2.INTER_CUBIC)
+
+    # only vdsr need per-interpolation
+    if args.arch == 'vdsr':
+        lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), cv2.INTER_CUBIC)
 
     start = time.time()
     if args.testSize == -1:
         # Test on whole data
-        input_tensor = np.expand_dims(subsampled, axis=0)
-        input_tensor = np.expand_dims(input_tensor, axis=0)
-        input_tensor = torch.from_numpy(input_tensor.copy()).float().cuda()
+        lr = np.expand_dims(lr, axis=0)
+        lr = np.expand_dims(lr, axis=0)
+        lr = torch.from_numpy(lr.copy()).float().cuda()
         with torch.no_grad():
-            output = model(input_tensor)
+            output = model(lr)
         sr = output.squeeze(0).detach().cpu().numpy()
     else:
         # Extract patches
-        dataset = PatchList(subsampled, subsampled.shape[0], subsampled.shape[1],
+        dataset = PatchList(lr, lr.shape[0], lr.shape[1],
                             patch_size=args.testSize)
         test_loader = torch.utils.data.DataLoader(
             dataset, batch_size=args.batchSize, shuffle=False,
             num_workers=args.nThreads, pin_memory=False, drop_last=False
         )
-        output_size = (subsampled.shape[0], subsampled.shape[1])
+        output_size = (hr.shape[0], hr.shape[1])
 
         output, count = test_model(test_loader, model, args.testSize, output_size)
         sr = output / count
 
     testTime += (time.time() - start)
 
-    result = SNR(sr, data)
+    result = SNR(sr, hr)
     testSNR += result
 
     if args.sample_dir:

@@ -95,8 +95,7 @@ class InterpDataset(Dataset):
         hr = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
 
         # To 2-D
-        hr.shape = (self.num_traces, -1)
-        hr = hr.T
+        hr.shape = (-1, self.num_traces)
 
         # For Multi-scale training
         if self.scale == 0:

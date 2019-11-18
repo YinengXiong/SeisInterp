@@ -93,8 +93,7 @@ def validate(model, criterion, eval_score=None, args=None):
         datafile = os.path.join(val_dir, ff)
         hr = np.fromfile(datafile, 'float32')
 
-        hr.shape = (args.num_traces, -1)
-        hr = hr.T
+        hr.shape = (-1, args.num_traces)
 
         if args.scale == 0:
             ss = 4
