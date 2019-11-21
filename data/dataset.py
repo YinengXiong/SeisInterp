@@ -3,6 +3,7 @@ import random
 import numpy as np
 import cv2
 
+import torch
 from torch.utils.data.dataset import Dataset
 
 def random_crop(hr, lr, size, scale, direction):
@@ -26,7 +27,7 @@ def random_crop(hr, lr, size, scale, direction):
         crop_hr = hr[hx: hx + xx,
                      hy: hy + yy].copy()
 
-        if (np.max(crop_hr) > 0):
+        if (np.max(crop_lr) > 0):
             break
 
     return crop_hr, crop_lr
@@ -114,6 +115,7 @@ class InterpDataset(Dataset):
             hr = hr[:hr.shape[0]//ss*ss, :hr.shape[1]//ss*ss]
             lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0] // ss), cv2.INTER_CUBIC)
 
+        #print('Subsample done')
         # Data Augmentation
         hr, lr = random_crop(hr, lr, self.patchSize, self.scale, self.direction)
         hr, lr = random_flip_and_rotate(hr, lr, self.direction)
@@ -121,6 +123,8 @@ class InterpDataset(Dataset):
         # to 3-D tensor todo: multi-components data
         hr = np.expand_dims(hr, axis=0)
         lr = np.expand_dims(lr, axis=0)
+        hr = torch.from_numpy(hr.copy()).float()
+        lr = torch.from_numpy(lr.copy()).float()
 
         return hr, lr
 
