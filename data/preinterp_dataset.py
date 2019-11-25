@@ -3,8 +3,10 @@ import random
 import numpy as np
 import cv2
 
+import torch
 from torch.utils.data.dataset import Dataset
 
+# H, W, C when data augmentation
 def random_crop(hr, lr, size):
     h, w = lr.shape[0], lr.shape[1]
     while True:
@@ -55,11 +57,22 @@ class PreInterpDataset(Dataset):
             direction -- direction which needs interpolation, 0(space) or 1(time) or 2(both)
             patchSize -- size of croped seismic data (lr patch size)
             repeat -- number of repeat in one epoch
+            nComp -- number of components for training
+            prefix -- prefix of seismic data file
         """
 
         self.data_path = os.path.join(args.dataroot, phase)
         self.repeat = args.repeat
-        self.data_arr = sorted(os.listdir(self.data_path) * self.repeat)
+
+        self.prefix = args.prefix
+        self.nComp = args.nComp
+
+        data_arr = sorted(os.listdir(self.data_path) * self.repeat)
+        self.data_arr = []
+        for dd in data_arr:
+            if self.prefix[0] in dd:
+                self.data_arr.append(dd)
+
         self.data_len = len(self.data_arr)
 
         self.num_traces= args.num_traces
@@ -79,11 +92,26 @@ class PreInterpDataset(Dataset):
         """
 
         # Read binary data files
-        data_name = self.data_arr[index]
-        hr = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
+        if self.nComp == 1:
+            data_name = self.data_arr[index]
+            hr = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
 
-        # To 2-D
-        hr.shape = (-1, self.num_traces)
+            hr.shape = (-1, self.num_traces)
+            hr = np.expand_dims(hr, axis=2)
+        else:
+            for icomp in range(self.nComp):
+                if icomp == 0:
+                    data_name = self.data_arr[index]
+                else:
+                    data_name = self.data_arr[index].replace(
+                        self.prefix[icomp-1], self.prefix[icomp])
+                hr_ = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
+                hr_.shape = (-1, self.num_traces)
+
+                if icomp == 0:
+                    hr = np.zeros((hr_.shape[0], hr_.shape[1], self.nComp), 'float32')
+
+                hr[:, :, icomp] = hr_
 
         # For Multi-scale training
         if self.scale == 0:
@@ -104,12 +132,17 @@ class PreInterpDataset(Dataset):
         lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]),
                         cv2.INTER_CUBIC)
 
+        if self.nComp == 1:
+            lr = np.expand_dims(lr, axis=2)
+
         # Data Augmentation
         hr, lr = random_crop(hr, lr, self.patchSize)
         hr, lr = random_flip_and_rotate(hr, lr, self.direction)
 
-        hr = np.expand_dims(hr, axis=0)
-        lr = np.expand_dims(lr, axis=0)
+        hr = np.transpose(hr, (2, 0, 1))
+        lr = np.transpose(lr, (2, 0, 1))
+        hr = torch.from_numpy(hr.copy()).float()
+        lr = torch.from_numpy(lr.copy()).float()
 
         return hr, lr
 

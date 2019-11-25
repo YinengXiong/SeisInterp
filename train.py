@@ -85,15 +85,37 @@ def validate(model, criterion, eval_score=None, args=None):
     start = time.time()
 
     val_dir = os.path.join(args.dataroot, 'Val')
-    vallists = sorted(os.listdir(val_dir))
+
+    vallists_ = sorted(os.listdir(val_dir))
+    vallists = []
+    for v in vallists_:
+        if args.prefix[0] in v:
+            vallists.append(v)
+
     valSNR = 0.
     valCount = len(vallists)
 
     for i, ff in enumerate(vallists):
-        datafile = os.path.join(val_dir, ff)
-        hr = np.fromfile(datafile, 'float32')
+        if args.nComp == 1:
+            datafile = os.path.join(val_dir, ff)
+            hr = np.fromfile(datafile, 'float32')
 
-        hr.shape = (-1, args.num_traces)
+            hr.shape = (-1, args.num_traces)
+            hr = np.expand_dims(hr, axis=2)
+        else:
+            for icomp in range(args.nComp):
+                if icomp == 0:
+                    datafile = os.path.join(val_dir, ff)
+                else:
+                    datafile = os.path.join(val_dir, ff.replace(
+                        args.prefix[icomp-1], args.prefix[icomp]))
+                hr_ = np.fromfile(datafile, 'float32')
+                hr_.shape = (-1, args.num_traces)
+
+                if icomp == 0:
+                    hr = np.zeros((hr_.shape[0], hr_.shape[1], args.nComp), 'float32')
+
+                hr[:, :, icomp] = hr_
 
         if args.scale == 0:
             ss = 4
@@ -118,10 +140,14 @@ def validate(model, criterion, eval_score=None, args=None):
         if args.arch == 'vdsr':
             lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), cv2.INTER_CUBIC)
 
-        # Validate on whole image
-        lr = np.expand_dims(lr, axis=0)
-        lr = np.expand_dims(lr, axis=0)
-        lr = torch.from_numpy(lr.copy()).float().cuda()
+        if args.nComp == 1:
+            lr = np.expand_dims(lr, axis=2)
+
+        hr = np.transpose(hr, (2, 0, 1))
+        lr = np.transpose(lr, (2, 0, 1))
+
+        #hr = torch.from_numpy(hr.copy()).float().cuda().unsqueeze(0)
+        lr = torch.from_numpy(lr.copy()).float().cuda().unsqueeze(0)
 
         # Forward
         with torch.no_grad():

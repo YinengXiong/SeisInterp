@@ -68,11 +68,22 @@ class InterpDataset(Dataset):
             direction -- direction which needs interpolation, 0(space) or 1(time) or 2(both)
             patchSize -- size of croped seismic data (lr patch size)
             repeat -- number of repeat in one epoch
+            nComp -- number of components for training
+            prefix -- prefix of seismic data file
         """
 
-        self.repeat = args.repeat
         self.data_path = os.path.join(args.dataroot, phase)
-        self.data_arr = sorted(os.listdir(self.data_path) * self.repeat)
+        self.repeat = args.repeat
+
+        self.prefix = args.prefix
+        self.nComp = args.nComp
+
+        data_arr = sorted(os.listdir(self.data_path) * self.repeat)
+        self.data_arr = []
+        for dd in data_arr:
+            if self.prefix[0] in dd:
+                self.data_arr.append(dd)
+
         self.data_len = len(self.data_arr)
 
         self.num_traces = args.num_traces
@@ -92,11 +103,26 @@ class InterpDataset(Dataset):
         """
 
         # Read binary data files
-        data_name = self.data_arr[index]
-        hr = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
+        if self.nComp == 1:
+            data_name = self.data_arr[index]
+            hr = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
 
-        # To 2-D
-        hr.shape = (-1, self.num_traces)
+            hr.shape = (-1, self.num_traces)
+            hr = np.expand_dims(hr, axis=2)
+        else:
+            for icomp in range(self.nComp):
+                if icomp == 0:
+                    data_name = self.data_arr[index]
+                else:
+                    data_name = self.data_arr[index].replace(
+                        self.prefix[icomp-1], self.prefix[icomp])
+                hr_ = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
+                hr_.shape = (-1, self.num_traces)
+
+                if icomp == 0:
+                    hr = np.zeros((hr_.shape[0], hr_.shape[1], self.nComp), 'float32')
+
+                hr[:, :, icomp] = hr_
 
         # For Multi-scale training
         if self.scale == 0:
@@ -115,14 +141,15 @@ class InterpDataset(Dataset):
             hr = hr[:hr.shape[0]//ss*ss, :hr.shape[1]//ss*ss]
             lr = cv2.resize(hr, (hr.shape[1] // ss, hr.shape[0] // ss), cv2.INTER_CUBIC)
 
-        #print('Subsample done')
+        if self.nComp == 1:
+            lr = np.expand_dims(lr, axis=2)
+
         # Data Augmentation
         hr, lr = random_crop(hr, lr, self.patchSize, self.scale, self.direction)
         hr, lr = random_flip_and_rotate(hr, lr, self.direction)
 
-        # to 3-D tensor todo: multi-components data
-        hr = np.expand_dims(hr, axis=0)
-        lr = np.expand_dims(lr, axis=0)
+        hr = np.transpose(hr, (2, 0, 1))
+        lr = np.transpose(lr, (2, 0, 1))
         hr = torch.from_numpy(hr.copy()).float()
         lr = torch.from_numpy(lr.copy()).float()
 
