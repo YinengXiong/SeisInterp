@@ -12,9 +12,10 @@ from options.test_options import TestOptions
 from utils import *
 
 class PatchList(torch.utils.data.Dataset):
-    def __init__(self, data, lenx, leny, patch_size=64):
+    def __init__(self, data, nComp, lenx, leny, patch_size=64):
         self.data = data
         self.size = (int(lenx), int(leny))
+        self.nComp = nComp
         self.patch_size = patch_size
         self.patch_list = []
         self.get_list()
@@ -48,8 +49,10 @@ class PatchList(torch.utils.data.Dataset):
         coordy = self.patch_list[index][1]
         data_ = self.data[coordx: coordx + self.patch_size,
                           coordy: coordy + self.patch_size]
+        if self.nComp == 1:
+            data_ = np.expand_dims(axis=2)
         data_tensor = torch.tensor(np.array(data_), requires_grad=False)
-        data_tensor = data_tensor.unsqueeze(0)
+        #data_tensor = data_tensor.unsqueeze(0)
         data_final = [data_tensor, coordx, coordy]
         return tuple(data_final)
 
@@ -119,16 +122,36 @@ print('*' * 50)
 start = time.time()
 
 test_dir = os.path.join(args.dataroot, 'Test')
-testlists = sorted(os.listdir(test_dir))
+testlists_ = sorted(os.listdir(test_dir))
+testlists = []
+for t in testlists_:
+    if args.prefix[0] in t:
+        testlists.append(t)
+
 testSNR = 0.
 testCount = len(testlists)
 testTime = 0.
 
 for i, ff in enumerate(testlists):
-    datafile = os.path.join(test_dir, ff)
-    hr = np.fromfile(datafile, 'float32')
+    if args.nComp == 1:
+        datafile = os.path.join(test_dir, ff)
+        hr = np.fromfile(datafile, 'float32')
 
-    hr.shape = (-1, args.num_traces)
+        hr.shape = (-1, args.num_traces)
+    else:
+        for icomp in range(args.nComp):
+            if icomp == 0:
+                datafile = os.path.join(test_dir, ff)
+            else:
+                datafile = os.path.join(test_dir, ff.replace(
+                    args.prefix[icomp-1], args.prefix[icomp]))
+            hr_ = np.fromfile(datafile, 'float32')
+            hr_.shape = (-1, args.num_traces)
+
+            if icomp == 0:
+                hr = np.zeros((hr_.shape[0], hr_.shape[1], args.nComp), 'float32')
+
+            hr[:, :, icomp] = hr_
 
     # Subsample & pre-interpolate
     if args.scale == 0:
@@ -153,16 +176,20 @@ for i, ff in enumerate(testlists):
     if args.arch == 'vdsr':
         lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), cv2.INTER_CUBIC)
 
+    if args.nComp == -1:
+        lr = np.expand_dims(lr, axis=2)
+
     start = time.time()
     if args.testSize == -1:
         # Test on whole data
-        lr = np.expand_dims(lr, axis=0)
-        lr = np.expand_dims(lr, axis=0)
-        lr = torch.from_numpy(lr.copy()).float().cuda()
+        hr = np.transpose(hr, (2, 0, 1))
+        lr = np.transpose(lr, (2, 0, 1))
+        lr = torch.from_numpy(lr.copy()).float().cuda().unsqueeze(0)
         with torch.no_grad():
             output = model(lr)
         sr = output.squeeze(0).detach().cpu().numpy()
     else:
+        # TODO: arch edsr & multi-component
         # Extract patches
         dataset = PatchList(lr, lr.shape[0], lr.shape[1],
                             patch_size=args.testSize)
