@@ -138,6 +138,7 @@ for i, ff in enumerate(testlists):
         hr = np.fromfile(datafile, 'float32')
 
         hr.shape = (-1, args.num_traces)
+        hr = np.expand_dims(hr, axis=2)
     else:
         for icomp in range(args.nComp):
             if icomp == 0:
@@ -176,7 +177,7 @@ for i, ff in enumerate(testlists):
     if args.arch == 'vdsr':
         lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), cv2.INTER_CUBIC)
 
-    if args.nComp == -1:
+    if args.nComp == 1:
         lr = np.expand_dims(lr, axis=2)
 
     start = time.time()
