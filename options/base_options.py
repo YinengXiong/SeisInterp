@@ -34,6 +34,7 @@ class BaseOptions():
         self.parser.add_argument('--arch', type=str, default='vdsr', help='Network architecture')
         self.parser.add_argument('--num_blocks', type=int, default=16, help='Number of blocks')
         self.parser.add_argument('--num_features', type=int, default=64, help='Number of features per block')
+        self.parser.add_argument('--num_layers', type=int, default=8, help='Number of layers in each block, required in some arch')
         self.parser.add_argument('--res_scale', type=float, default=0.1, help='Res scale of each residual block')
         self.parser.add_argument('--residual', action='store_true', help='Using residual shortcut or not')
         self.parser.add_argument('--no_bias', action='store_true', help='Not using bias in Conv layers')

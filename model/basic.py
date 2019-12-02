@@ -25,24 +25,6 @@ class BasicBlock(nn.Sequential):
             m.append(act)
         super(BasicBlock, self).__init__(*m)
 
-class RDBConv(nn.Module):
-    """
-    Conv Layer in Residual-Dense Block
-    """
-    def __init__(self, in_channels, grow_rate, kernel_size, bias=True):
-        super(RDBConv, self).__init__()
-        Cin = in_channels
-        G = grow_rate
-        self.conv = nn.Sequential(*[
-            nn.Conv2d(Cin, G, kernel_size, stride=1, padding=kernel_size//2,
-                      bias=bias),
-            nn.ReLU(True)
-        ])
-
-    def forward(self, x):
-        out = self.conv(x)
-        return torch.cat((x, out), 1)
-
 class ResBlock(nn.Module):
     """
     Residual Block
