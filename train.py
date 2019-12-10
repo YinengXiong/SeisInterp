@@ -31,15 +31,6 @@ def train_model(train_data_loader, model, criterion, optimizer, epoch,
     for i, (hr, lr) in enumerate(train_data_loader):
         data_time.update(time.time() - start)
 
-        '''
-        if args.scale > 0:
-            hr, lr = inputs[-1][0], inputs[-1][1]
-            print(hr.size(), lr.size())
-        else:
-            scale = random.randint(2, 4)
-            hr, lr = inputs[scale-2][0], inputs[scale-2][1]
-        '''
-
         hr = Variable(hr.cuda())
         lr = Variable(lr.cuda())
 
