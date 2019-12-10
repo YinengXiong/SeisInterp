@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from options.train_options import TrainOptions
 from utils import *
 
-def train_model(train_data_loader, mnodel, criterion, optimizer, epoch,
+def train_model(train_data_loader, model, criterion, optimizer, epoch,
                 eval_score=None, args=None):
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -193,12 +193,13 @@ os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 checkpath = os.path.join(args.checkpoints_dir, '{0}_{1}_bs{2}_ps{3}_b{4}_f{5}_{6}_lr{7}_mode{8}_loss{9}'.format(
     time.strftime("%m-%d_%H:%M", time.localtime()), args.arch,
     args.batchSize, args.patchSize, args.num_blocks, args.num_features,
-    'res' if args.residual else 'nores', args.lr, args.lr_mode, args.loss)
+    'res'+str(args.res_scale) if args.residual else 'nores', args.lr, args.lr_mode, args.loss)
 )
-args.checkpath = checkpath
 
 if not os.path.exists(checkpath):
     os.makedirs(checkpath)
+
+args.checkpath = checkpath
 
 # Generate Log
 FORMAT = "[%(asctime)-15s %(filename)s:%(lineno)d %(funcName)s] %(message)s"
