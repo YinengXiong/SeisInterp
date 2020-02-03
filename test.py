@@ -86,6 +86,10 @@ def test_model(test_loader, model, patch_size, output_size):
 args = TestOptions().parse()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
+
+# Print Option
+np.set_printoptions(precision=4, suppress=True)
+
 # Generate Results dir
 if args.sample_dir:
     if not os.path.exists(args.sample_dir):
@@ -94,7 +98,6 @@ if args.sample_dir:
 # Create Model
 print('Creating Model...')
 model = importlib.import_module("model.{}".format(args.arch)).Model(args)
-
 
 # Load pretrained model
 if args.model:
@@ -128,8 +131,11 @@ for t in testlists_:
     if args.prefix[0] in t:
         testlists.append(t)
 
-testSNR = 0.
 testCount = len(testlists)
+if args.nComp == 1 or not args.respective:
+    testSNR = 0.
+else:
+    testSNR = [0.] * args.nComp
 testTime = 0.
 
 for i, ff in enumerate(testlists):
@@ -205,17 +211,21 @@ for i, ff in enumerate(testlists):
 
     testTime += (time.time() - start)
 
-    result = SNR(sr, hr)
-    testSNR += result
+    if args.nComp == 1 or not args.respective:
+        result = SNR(sr, hr)
+        testSNR += result
+        print('{:40} SNR = {:.4f}'.format(datafile, result))
+    else:
+        result = [SNR(sr[i, :, :], hr[i, :, :]) for i in range(args.nComp)]
+        testSNR = np.add(testSNR, result)
+        print('{:40} SNR = '.format(datafile), np.array(result))
 
     if args.sample_dir:
         filename = args.arch + '_' + ff.replace('.dat', '.npy')
         np.save(os.path.join(args.sample_dir, filename), sr)
 
-    print('{:40} SNR = {:.4f}'.format(datafile, result))
-
 print('*' * 50)
-print('Average SNR {:.4f} dB'.format(testSNR / testCount))
+print('Average SNR ', testSNR / testCount, 'dB')
 print('Average Inference time {:.4f} s'.format(testTime / testCount))
 if args.sample_dir:
     print('Results saved to ', args.sample_dir)
