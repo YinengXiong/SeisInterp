@@ -26,6 +26,7 @@ class BaseOptions():
         self.parser.add_argument('--nComp', type=int, default=1, help='Number of components of seismic data')
         self.parser.add_argument('--prefix', type=str, default='', help='Prefix of seismic filename e.g. shot_p')
         self.parser.add_argument('--scale', type=int, default=4, help='Interpolation scale factor [0 (multi-scale, 2 ~ 4) | 2 | 3 | 4]')
+        self.parser.add_argument('--tscale', type=int, default=1, help='Time scale')
         self.parser.add_argument('--direction', type=int, default=0, help='Axis to interpolate [0 (space) | 1 (time) | 2 (both)]')
         self.parser.add_argument('--batchSize', type=int, default=32, help='Batch Size')
         self.parser.add_argument('--nThreads', type=int, default=4, help='Num of threads for loading data')

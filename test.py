@@ -145,6 +145,7 @@ for i, ff in enumerate(testlists):
 
         hr.shape = (-1, args.num_traces)
         hr = np.expand_dims(hr, axis=2)
+        hr = hr[::args.tscale, :]
     else:
         for icomp in range(args.nComp):
             if icomp == 0:
@@ -154,6 +155,7 @@ for i, ff in enumerate(testlists):
                     args.prefix[icomp-1], args.prefix[icomp]))
             hr_ = np.fromfile(datafile, 'float32')
             hr_.shape = (-1, args.num_traces)
+            hr_ = hr_[::args.tscale, :]
 
             if icomp == 0:
                 hr = np.zeros((hr_.shape[0], hr_.shape[1], args.nComp), 'float32')

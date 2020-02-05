@@ -92,6 +92,7 @@ def validate(model, criterion, eval_score=None, args=None):
             hr = np.fromfile(datafile, 'float32')
 
             hr.shape = (-1, args.num_traces)
+            hr = hr[::args.tscale, :]
             hr = np.expand_dims(hr, axis=2)
         else:
             for icomp in range(args.nComp):
@@ -102,6 +103,7 @@ def validate(model, criterion, eval_score=None, args=None):
                         args.prefix[icomp-1], args.prefix[icomp]))
                 hr_ = np.fromfile(datafile, 'float32')
                 hr_.shape = (-1, args.num_traces)
+                hr_ = hr_[::args.tscale, :]
 
                 if icomp == 0:
                     hr = np.zeros((hr_.shape[0], hr_.shape[1], args.nComp), 'float32')
@@ -230,6 +232,12 @@ model = importlib.import_module("model.{}".format(args.arch)).Model(args)
 #model = vdsr.VDSR(args.num_blocks, args.residual)
 logger.info(model)
 
+# Use GPUs
+print('Found', torch.cuda.device_count(), 'GPUs')
+if torch.cuda.device_count() > 1:
+    model = torch.nn.DataParallel(model)
+model = model.cuda()
+
 # Load pretrained model
 if args.pretrained:
     if os.path.isfile(args.pretrained):
@@ -238,12 +246,6 @@ if args.pretrained:
         model.load_state_dict(checkpoint['state_dict'])
     else:
         print('=> no checkpoint found at "{}"'.format(args.pretrained))
-
-# Use GPUs
-print('Found', torch.cuda.device_count(), 'GPUs')
-if torch.cuda.device_count() > 1:
-    model = torch.nn.DataParallel(model)
-model.cuda()
 
 # Define Loss Function
 if args.loss == 'l2':
