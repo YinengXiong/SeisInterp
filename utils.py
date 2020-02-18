@@ -19,7 +19,11 @@ class AverageMeter(object):
 
 def SNR(pred, gt):
     imdff = pred - gt
-    return 10. * np.log10((np.sum(gt ** 2)+1e-5) / (np.sum(imdff ** 2) + 1e-5))
+    rmsgt = np.sqrt(np.mean(gt ** 2))
+    rmsdf = np.sqrt(np.mean(imdff ** 2))
+    return  10. * np.log10((rmsgt ** 2 + 1e-5) / (rmsdf ** 2 + 1e-5))
+
+    #return 10. * np.log10((np.sum(gt ** 2)+1e-5) / (np.sum(imdff ** 2) + 1e-5))
 
 def accuracy(output, target):
     """
