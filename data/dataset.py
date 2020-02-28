@@ -88,6 +88,8 @@ class InterpDataset(Dataset):
 
         self.num_traces = args.num_traces
         self.scale = args.scale
+        # tscale
+        self.tscale = args.tscale
 
         self.direction = args.direction
         self.patchSize = args.patchSize
@@ -108,6 +110,7 @@ class InterpDataset(Dataset):
             hr = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
 
             hr.shape = (-1, self.num_traces)
+            hr = hr[::self.tscale, :]
             hr = np.expand_dims(hr, axis=2)
         else:
             for icomp in range(self.nComp):
@@ -118,6 +121,7 @@ class InterpDataset(Dataset):
                         self.prefix[icomp-1], self.prefix[icomp])
                 hr_ = np.fromfile(os.path.join(self.data_path, data_name), 'float32')
                 hr_.shape = (-1, self.num_traces)
+                hr_ = hr_[::self.tscale, :]
 
                 if icomp == 0:
                     hr = np.zeros((hr_.shape[0], hr_.shape[1], self.nComp), 'float32')

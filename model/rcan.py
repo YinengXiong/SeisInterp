@@ -5,7 +5,7 @@ import torch.nn as nn
 
 # Channel Attention Layer
 class CALayer(nn.Module):
-    def __init__(self, channel, reduction=16, bias=True):
+    def __init__(self, channel, reduction=16):
         super(CALayer, self).__init__()
 
         # global average pooling: feature -> point
@@ -13,9 +13,9 @@ class CALayer(nn.Module):
 
         # feature channel downscale and upsample -> channel weight
         self.conv_du = nn.Sequential(
-            nn.Conv2d(channel, channel//reduction, 1, padding=0, bias=bias),
+            nn.Conv2d(channel, channel//reduction, 1, padding=0, bias=True),
             nn.ReLU(True),
-            nn.Conv2d(channel//reduction, channel, 1, padding=0, bias=bias),
+            nn.Conv2d(channel//reduction, channel, 1, padding=0, bias=True),
             nn.Sigmoid()
         )
 
@@ -40,7 +40,7 @@ class RCAB(nn.Module):
             if i == 0:
                 body.append(act)
 
-        body.append(CALayer(num_features, reduction, bias))
+        body.append(CALayer(num_features, reduction))
 
         self.body = nn.Sequential(*body)
         self.res_scale = res_scale
@@ -67,7 +67,8 @@ class ResidualGroup(nn.Module):
     def forward(self, x):
         res = self.body(x)
         res += x
-        return x
+
+        return res
 
 class Model(nn.Module):
     def __init__(self, args):
@@ -113,6 +114,6 @@ class Model(nn.Module):
         res = self.body(x)
         res += x
 
-        x = self.tail(x)
+        x = self.tail(res)
 
         return x

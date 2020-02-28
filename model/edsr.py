@@ -15,7 +15,6 @@ class Model(nn.Module):
 
         kernel_size = 3
         act = nn.ReLU(True)
-        self.residual = args.residual
 
         # Define head module
         self.head = nn.Conv2d(nComp, num_features, kernel_size,
@@ -44,8 +43,7 @@ class Model(nn.Module):
         x = self.head(x)
 
         res = self.body(x)
-        if self.residual:
-            res = torch.add(res, x)
+        res = torch.add(res, x)
 
         x = self.tail(res)
 
