@@ -34,7 +34,7 @@ Each shot record has the size of `500 X 6001` (500 traces with 10m interval, 600
 [Google Drive](https://drive.google.com/file/d/10kZO2y1LcoWkupEztTkpvd3aPymXV_mb/view?usp=sharing) | [Baidu Downloads](https://pan.baidu.com/s/1bc7g_Y3b09S31mQJXjWXFQ) Code: q97i
 
 ### SeisInterp Train/Test
-For example, if you want to train an interpolation model which needs pre-interpolation and only interpolate on $X-$ direction at the scale of $4$ 
+For example, if you want to train an interpolation model which needs pre-interpolation and only interpolate on X- direction at the scale of 4 
 
 ```bash
 python train.py --gpu 0 --dataroot ./Data/MarmousiP20HzAGC500/ --num_traces 500 --nComp 1 --prefix shotp --scale 4 --diretion 0 --arch vdsr
