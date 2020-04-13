@@ -1,7 +1,5 @@
 # Seismic Data Interpolation using Convolutional Neural Network
 
-SeisInterp: [Paper](https://doi.org/10.3997/2214-4609.201900768)
-
 ## Prerequisites
 - Linux
 - Python 3
